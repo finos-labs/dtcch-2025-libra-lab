@@ -10,6 +10,7 @@
 ### Project Details
 LibraFinFact is an AI-powered platform designed to address the growing challenges in managing and verifying corporate action data. By leveraging advanced machine learning algorithms and large language models, LibraFinFact simplifies data verification, enhances accessibility, and delivers actionable insights to retail investors, analysts and corporate professionals.
 
+## Project Video - https://youtu.be/KGDoVcLTCV0
 
 ### Team Information
 ### Team Name - LIBRA Lab (Lab for Interdisciplinary and Broad Research in AI)
