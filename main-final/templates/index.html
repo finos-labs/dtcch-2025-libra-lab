@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LibraFinFact</title>
+    <link rel="stylesheet" href="{{url_for('static',filename='style.css')}}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/sweetalert2/5.3.8/sweetalert2.css">
+    <link rel="icon" href="{{url_for('static',filename='favicon.ico')}}">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">
+            <img src="{{url_for('static',filename='favicon.ico')}}" alt="Logo">
+            <span>LibraFinFact</span>
+        </div>
+        <button class="new-thread"><span>New Chat</button>
+        <nav>
+            <a href="/" class="active"><i class="icon">🏠</i> Home</a>
+            <a href="/news_feed"><i class="icon">📰</i> News Feed</a>
+            <a href="/fake_detection"><i class="icon">🔍</i> Discrepancy Detector</a>
+        </nav>
+        <div class="auth-buttons">
+            <button class="sign-up">Sign Up</button>
+            <button class="log-in">Log in</button>
+        </div>
+    </div>
+    <div style="display:flex; flex-direction: column; ">
+    <div class="input-area">
+            <button class="add">+</button>
+            <input id="myInput" type="text" placeholder="Ask follow-up">
+            <button class="mic-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                  <line x1="12" x2="12" y1="19" y2="22"/>
+                </svg>
+              </button>
+            
+        </div>
+        
+    <div style="display:flex; flex-direction: column; " id="main-box">
+    
+    </div>
+     <div class="related">
+          <h3>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+            Related
+          </h3>
+          <div class="related-questions" id="related-questions"></div>
+        </div>
+    
+     
+    </div>
+    <div class="right-sidebar">
+        <input type="hidden" id="clientId" value="{{ client_id }}"></input>
+
+        <div id="configuration">
+          
+          <input id="ttsVoice" type="text" size="32" style="font-size: medium;" value="en-US-JennyMultilingualV2Neural" hidden></input>
+          <input id="customVoiceEndpointId" type="text" size="32" style="font-size: medium;" value="" hidden></input>
+          <input id="personalVoiceSpeakerProfileID" type="text" size="32" style="font-size: medium;" value="" hidden></input>
+        
+          <input id="talkingAvatarCharacter" type="text" size="16" style="font-size: medium;" value="lisa" hidden></input>
+          <input id="talkingAvatarStyle" type="text" size="16" style="font-size: medium;" value="casual-sitting" hidden></input>
+          <input id="backgroundColor" type="text" size="16" style="font-size: medium;" value="#FFFFFFFF" hidden></input>
+          <input id="backgroundImageUrl" type="text" size="64" style="font-size: medium;" placeholder="https://samples-files.com/samples/Images/jpg/1920-1080-sample.jpg" value="" hidden></input>
+          <div style="background-color: white; width: 200px;">
+            <input type="checkbox" id="customizedAvatar" hidden></input>
+            <input type="checkbox" id="transparentBackground" onchange="updataTransparentBackground()" hidden></input>
+            <input type="checkbox" id="videoCrop" checked hidden></input>
+          </div>
+          
+        </div>
+        
+        
+        <textarea id="spokenText" style="height:40px" hidden></textarea>
+        <button class="startSession" "id="startSession" onclick="startSession()">Summary</button>
+        <button id="speak" onclick="speak()" disabled="disabled" hidden>Speak</button>
+        <button id="stopSpeaking" onclick="stopSpeaking()" disabled="disabled" hidden>Stop Speaking</button>
+        <button id="stopSession" onclick="stopSession()" disabled="disabled" hidden>Stop Session</button>
+        <br/>
+        
+        <div id="videoContainer" style="position: relative; width: 960px;">
+          <div id="overlayArea" style="position: absolute;" hidden="hidden">
+            <!-- Add your text or image controls here -->
+            <p id="overlayText" style="font-size: large;">Live Video</p>
+            <!-- <img id="overlayImage" src="your-image-source.png" alt="Overlay Image"> -->
+          </div>
+          <div id="remoteVideo"></div>
+          <canvas id="canvas" width="720" height="1080" style="background-color: transparent;" hidden="hidden"></canvas>
+          <canvas id="tmpCanvas" width="720" height="1080" hidden="hidden"></canvas>
+        </div>
+        
+        
+        <div id="logging" style="background-color: white;" hidden></div>
+	<div id="main_summary"></div>
+    </div>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.0/jquery.min.js'></script>
+    <script src="https://cdn.jsdelivr.net/sweetalert2/5.3.8/sweetalert2.js"></script>
+
+    <script>
+        
+        
+        
+        var info = {{info|tojson}}
+        let info1="";
+        let additionalCards1=[];
+        
+        var sd = {{sd|tojson}}
+        // Show all functionality
+        // const showAllBtn = document.getElementById('showAll');
+        // const sourceCardsContainer = document.getElementById('sourceCards');
+        let expanded = {};
+        expanded[info["query_no"]]=false;
+        
+        
+        function show() {
+          
+          parent = $(this).parent()[0];
+          console.log(parent)
+          sourceCardsContainer = parent.querySelector('#sourceCards');
+          showAllBtn = parent.querySelector('#showAll');
+          console.log(showAllBtn)
+          query_number = parent.querySelector('#unique-no');
+          
+          // Tooltip functionality
+          sourceCards = parent.querySelectorAll('.source-card');
+          sourceCards.forEach(card => {
+              card.addEventListener('mouseover', (e) => {
+                  const tooltip = document.createElement('div');
+                  tooltip.className = 'tooltip';
+                  tooltip.textContent = card.dataset.tooltip;
+                  card.appendChild(tooltip);
+              });
+  
+              card.addEventListener('mouseout', () => {
+                  const tooltip = card.querySelector('.tooltip');
+                  if (tooltip) {
+                      tooltip.remove();
+                  }
+              });
+          });
+          
+          if (!expanded[query_number]) {
+                additionalCards.forEach(card => {
+                    const newCard = document.createElement('div');
+                    newCard.className = 'source-card';
+                    newCard.style = card.color;
+                    newCard.dataset.tooltip = card.tooltip;
+                    newCard.innerHTML = `
+                        <a href=${card.link} style="text-decoration:none; color:white;">
+                        <h3 style=${card.textcolor}>${card.title}</h3>
+                        <span class="source-url" style="display:flex; flex-direction:row; align-items:center; ${card.textcolor}"><img src=${card.favi} width="30" height="30" alt="Avatar" style="padding:5px; border:1px solid white; border-radius:50%;">&nbsp; ${card.url}</span>
+                        </a>
+                    `;
+                    
+                    // Add tooltip functionality to new cards
+                    newCard.addEventListener('mouseover', (e) => {
+                        const tooltip = document.createElement('div');
+                        tooltip.className = 'tooltip';
+                        tooltip.textContent = card.tooltip;
+                        newCard.appendChild(tooltip);
+                    });
+
+                    newCard.addEventListener('mouseout', () => {
+                        const tooltip = newCard.querySelector('.tooltip');
+                        if (tooltip) {
+                            tooltip.remove();
+                        }
+                    });
+
+                    sourceCardsContainer.appendChild(newCard);
+                });
+                showAllBtn.textContent = 'Show less';
+                expanded[query_number] = true;
+            } else {
+                const cards = sourceCardsContainer.querySelectorAll('.source-card');
+                for (let i = 3; i < cards.length; i++) {
+                    cards[i].remove();
+                }
+                showAllBtn.textContent = 'Show all';
+                expanded[query_number] = false;
+            }
+          
+          
+        }
+        
+        function show1() {
+          
+          parent = $(this).parent()[0];
+          console.log(parent)
+          sourceCardsContainer = parent.querySelector('#sourceCards');
+          showAllBtn = parent.querySelector('#showAll');
+          console.log(showAllBtn)
+          query_number = parent.querySelector('#unique-no');
+          
+          // Tooltip functionality
+          sourceCards = parent.querySelectorAll('.source-card');
+          sourceCards.forEach(card => {
+              card.addEventListener('mouseover', (e) => {
+                  const tooltip = document.createElement('div');
+                  tooltip.className = 'tooltip';
+                  tooltip.textContent = card.dataset.tooltip;
+                  card.appendChild(tooltip);
+              });
+  
+              card.addEventListener('mouseout', () => {
+                  const tooltip = card.querySelector('.tooltip');
+                  if (tooltip) {
+                      tooltip.remove();
+                  }
+              });
+          });
+          
+          if (!expanded[query_number]) {
+                additionalCards1.forEach(card => {
+                    const newCard = document.createElement('div');
+                    newCard.className = 'source-card';
+                    newCard.style = card.color;
+                    newCard.dataset.tooltip = card.tooltip;
+                    newCard.innerHTML = `
+                        <a href=${card.link} style="text-decoration:none; color:white;">
+                        <h3 style=${card.textcolor}>${card.title}</h3>
+                        <span class="source-url" style="display:flex; flex-direction:row; align-items:center; ${card.textcolor}"><img src=${card.favi} width="30" height="30" alt="Avatar" style="padding:5px; border:1px solid white; border-radius:50%;">&nbsp; ${card.url}</span>
+                        </a>
+                    `;
+                    
+                    // Add tooltip functionality to new cards
+                    newCard.addEventListener('mouseover', (e) => {
+                        const tooltip = document.createElement('div');
+                        tooltip.className = 'tooltip';
+                        tooltip.textContent = card.tooltip;
+                        newCard.appendChild(tooltip);
+                    });
+
+                    newCard.addEventListener('mouseout', () => {
+                        const tooltip = newCard.querySelector('.tooltip');
+                        if (tooltip) {
+                            tooltip.remove();
+                        }
+                    });
+
+                    sourceCardsContainer.appendChild(newCard);
+                });
+                showAllBtn.textContent = 'Show less';
+                expanded[query_number] = true;
+            } else {
+                const cards = sourceCardsContainer.querySelectorAll('.source-card');
+                for (let i = 3; i < cards.length; i++) {
+                    cards[i].remove();
+                }
+                showAllBtn.textContent = 'Show all';
+                expanded[query_number] = false;
+            }
+          
+          
+        }
+        
+        
+        
+        
+        
+        console.log(sd);
+        document.getElementById("spokenText").innerHTML = sd["summary"];
+        var additionalCards = [];
+        var back_color = "";
+        for (var i=3;i<sd["Title"].length;i++) {
+        
+        if (sd["cite_state"][i]=="official") {
+            back_color = "background-color:#a855f7; border: 1px solid white;";
+            text_color = "color:black;"
+            }
+            else {
+            back_color = "background-color:black; border: 1px solid white;";
+            text_color = "color:white;"
+            }
+
+        additionalCards.push({
+                title: sd["Title"][i],
+                url: sd["Sites"][i],
+                tooltip: "Click to read more about "+sd["Title"][i],
+                link: sd["Links"][i],
+                favi:sd["Favicon"][i],
+                color: back_color,
+		textcolor: text_color
+        })
+        }
+        console.log(additionalCards);
+        
+        
+        
+        
+        main_box = document.getElementById("main-box")
+        
+        main_ele = document.createElement("main");
+        
+        // Header Block
+       
+        
+        
+        header_ele = document.createElement("header");
+        
+        
+        div_ele1 = document.createElement("div");
+        div_ele1.setAttribute("class", "header-left");
+        
+        span_ele1 = document.createElement("span");
+        span_ele1.setAttribute("class", "time");
+        span_ele1.innerHTML = "Now"
+        div_ele1.appendChild(span_ele1);
+        
+        h1_ele1 = document.createElement("h1");
+        h1_ele1.setAttribute("id", "query");
+        h1_ele1.innerHTML = info["query"];
+        div_ele1.appendChild(h1_ele1);
+        
+        header_ele.appendChild(div_ele1);
+        
+        div_ele2 = document.createElement("div");
+        div_ele2.setAttribute("class", "header-right");
+        
+        button_ele1 = document.createElement("button");
+        button_ele1.setAttribute("class", "bookmark");
+        button_ele1.innerHTML="📋";
+        div_ele2.appendChild(button_ele1);
+        
+        button_ele2 = document.createElement("button");
+        button_ele2.setAttribute("class", "link");
+        button_ele2.innerHTML="💾";
+        div_ele2.appendChild(button_ele2);
+        
+        button_ele3 = document.createElement("button");
+        button_ele3.setAttribute("class", "share");
+        button_ele3.innerHTML="Share";
+        div_ele2.appendChild(button_ele3);
+        
+        header_ele.appendChild(div_ele2);
+        
+        main_ele.appendChild(header_ele);
+        
+        // Section Block
+        
+                
+                
+        section_ele = document.createElement("section");
+        section_ele.setAttribute("class", "sources");
+        
+        input_ele2 = document.createElement("input");
+        input_ele2.setAttribute("type", "hidden")
+        input_ele2.setAttribute("id", "unique-no")
+        input_ele2.setAttribute("value", info["query_no"])
+        section_ele.appendChild(input_ele2);
+        
+        h2_ele1 = document.createElement("h2");
+        h2_ele1.innerHTML = "Sources";
+        section_ele.appendChild(h2_ele1);
+        
+        div_ele3 = document.createElement("div");
+        div_ele3.setAttribute("class", "source-cards");
+        div_ele3.setAttribute("id", "sourceCards");
+       
+        
+        for (var i=1;i<4;i++) {
+        
+          
+          div_ele4 = document.createElement("div");
+          div_ele4.setAttribute("class", "source-card");
+          div_ele4.setAttribute("id", "source-card"+i.toString());
+          if (sd["cite_state"][i-1]=="official") {
+          div_ele4.setAttribute("style", "background-color:#a855f7; border:1px solid white;");
+          }
+          else {
+          div_ele4.setAttribute("style", "background-color:black; border:1px solid white;");
+          }
+          div_ele4.setAttribute("data-tooltip", "Click to read more about "+sd["Title"][i-1]);
+          
+          a_ele1 = document.createElement("a");
+          a_ele1.setAttribute("href", sd["Links"][i-1]);
+          a_ele1.setAttribute("style", "text-decoration:none; color:white;");
+          a_ele1.setAttribute("id", "link"+i.toString());
+          
+          h3_ele1 = document.createElement("h3");
+          h3_ele1.setAttribute("id", "title"+i.toString());
+	  if (sd["cite_state"][i-1]=="official") {
+          h3_ele1.setAttribute("style", "color:black;");
+          }
+          else {
+          h3_ele1.setAttribute("style", "color:white;");
+          }
+
+          h3_ele1.innerHTML = sd["Title"][i-1];
+          a_ele1.appendChild(h3_ele1);
+          
+          span_ele1 = document.createElement("span");
+          span_ele1.setAttribute("id", "site1");
+          span_ele1.setAttribute("class", "source-url");
+          if (sd["cite_state"][i-1]=="official") {
+          span_ele1.setAttribute("style", "display:flex; flex-direction:row; align-items:center; color:black;");
+          }
+          else {
+          span_ele1.setAttribute("style", "display:flex; flex-direction:row; align-items:center; color:white;")
+          }
+
+          span_ele1.innerHTML = '<img src='+sd["Favicon"][i-1]+' alt="Avatar"  width="30" height="30" style="padding:5px; border:1px solid white; border-radius:50%;">&nbsp;'+sd["Sites"][i-1];
+          a_ele1.appendChild(span_ele1);
+          
+          div_ele4.appendChild(a_ele1);
+          div_ele3.appendChild(div_ele4);
+          
+        }
+        
+        
+        section_ele.appendChild(div_ele3);
+        
+        button_ele4 = document.createElement("button");
+        button_ele4.setAttribute("class", "show-all");
+        button_ele4.setAttribute("id", "showAll");
+        button_ele4.innerHTML="Show all";
+        button_ele4.addEventListener("click", show);
+        section_ele.appendChild(button_ele4);
+        
+        main_ele.appendChild(section_ele);
+        
+        section_ele2 = document.createElement("section");
+        section_ele2.setAttribute("class", "answer");
+        section_ele2.setAttribute("id", "answer");
+        section_ele2.innerHTML = info["para"];
+        
+        
+        main_ele.appendChild(section_ele2);
+        
+        main_box.appendChild(main_ele);
+
+relatedQuestions = sd["related_questions"]
+
+// Function to create related questions
+
+container = document.getElementById('related-questions');
+container.innerHTML = ""
+for (var i=0;i<relatedQuestions.length;i++) {
+    const button = document.createElement('button');
+    button.className = 'related-question';
+    button.addEventListener("click", query_result);
+    
+    const span = document.createElement('span');
+    span.setAttribute("id","question");
+    span.textContent = relatedQuestions[i];
+    
+    const icon = document.createElement('svg');
+    icon.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    icon.setAttribute('width', '18');
+    icon.setAttribute('height', '18');
+    icon.setAttribute('viewBox', '0 0 24 24');
+    icon.setAttribute('fill', 'none');
+    icon.setAttribute('stroke', 'currentColor');
+    icon.setAttribute('stroke-width', '2');
+    icon.setAttribute('stroke-linecap', 'round');
+    icon.setAttribute('stroke-linejoin', 'round');
+    
+    const path1 = document.createElement('path');
+    path1.setAttribute('d', 'M5 12h14');
+    const path2 = document.createElement('path');
+    path2.setAttribute('d', 'M12 5v14');
+    
+    icon.appendChild(path1);
+    icon.appendChild(path2);
+    icon.style.color = 'rgba(255, 255, 255, 0.4)';
+    
+    button.appendChild(span);
+    button.appendChild(icon);
+    container.appendChild(button);
+    
+    
+}
+
+let div2 = document.createElement('div');
+div2.innerHTML = "<br><br><br><br>"
+container.appendChild(div2);
+
+var input = document.getElementById("myInput");
+let mes = info["messages"];
+let qn = info["query_no"];
+
+
+function query_result() {
+
+question = $(this)[0].innerText;
+console.log(mes);
+          
+swal({
+     text:"LibraFinFact is Acquiring Data and Performing Analysis for You",
+    title: 'Please Wait...',
+    allowEscapeKey: false,
+    allowOutsideClick: false,
+    onOpen: () => {
+      swal.showLoading();
+    }
+  }).catch(
+    () => {}
+  );
+    
+    var form = new FormData();
+        form.append("query", question);
+        form.append("messages", mes);
+        $.ajax({
+            type: 'POST',
+            url: '/follow_up_query',
+            data: JSON.stringify({"query":question,"messages":mes,"query_no":qn}),
+            dataType: "json",
+            cache: false,
+            processData: false,
+            contentType: "application/json; charset=utf-8"
+
+        }).done(function(data) {
+            console.log(data);
+            
+            info1 = data;
+        
+            var sd1 = data;
+            
+            
+            mes = info1["messages"]
+            qn = info1["query_no"]
+            
+            expanded[info1["query_no"]] = false;
+            console.log(expanded);
+            console.log(sd);
+            additionalCards1=[];
+            
+            for (var i=3;i<sd1["Title"].length;i++) {
+            if (sd1["cite_state"][i]=="official") {
+            back_color = "background-color:#a855f7; border: 1px solid white;";
+            text_color = "color:black;"
+            }
+            else {
+            back_color = "background-color:black; border: 1px solid white;";
+            text_color = "color:white;"
+            }
+
+            additionalCards1.push({
+                    title: sd1["Title"][i],
+                    url: sd1["Sites"][i],
+                    tooltip: "Click to read more about "+sd1["Title"][i],
+                    link: sd1["Links"][i],
+                    favi:sd1["Favicon"][i],
+                    color: back_color,
+		    textcolor: text_color
+            })
+            }
+            console.log(additionalCards1);
+            
+            main_box = document.getElementById("main-box")
+        
+        main_ele = document.createElement("main");
+        
+        // Header Block
+        
+        header_ele = document.createElement("header");
+        
+        div_ele1 = document.createElement("div");
+        div_ele1.setAttribute("class", "header-left");
+        
+        span_ele1 = document.createElement("span");
+        span_ele1.setAttribute("class", "time");
+        span_ele1.innerHTML = "Now"
+        div_ele1.appendChild(span_ele1);
+        
+        h1_ele1 = document.createElement("h1");
+        h1_ele1.setAttribute("id", "query");
+        h1_ele1.innerHTML = info1["query"];
+        div_ele1.appendChild(h1_ele1);
+        
+        header_ele.appendChild(div_ele1);
+        
+        div_ele2 = document.createElement("div");
+        div_ele2.setAttribute("class", "header-right");
+        
+        button_ele1 = document.createElement("button");
+        button_ele1.setAttribute("class", "bookmark");
+        button_ele1.innerHTML="📋";
+        div_ele2.appendChild(button_ele1);
+        
+        button_ele2 = document.createElement("button");
+        button_ele2.setAttribute("class", "link");
+        button_ele2.innerHTML="💾";
+        div_ele2.appendChild(button_ele2);
+        
+        button_ele3 = document.createElement("button");
+        button_ele3.setAttribute("class", "share");
+        button_ele3.innerHTML="Share";
+        div_ele2.appendChild(button_ele3);
+        
+        header_ele.appendChild(div_ele2);
+        
+        main_ele.appendChild(header_ele);
+        
+        // Section Block
+        
+                
+                
+        section_ele = document.createElement("section");
+        section_ele.setAttribute("class", "sources");
+        
+        input_ele2 = document.createElement("input");
+        input_ele2.setAttribute("type", "hidden")
+        input_ele2.setAttribute("id", "unique-no")
+        input_ele2.setAttribute("value", info1["query_no"])
+        section_ele.appendChild(input_ele2);
+        
+        h2_ele1 = document.createElement("h2");
+        h2_ele1.innerHTML = "Sources";
+        section_ele.appendChild(h2_ele1);
+        
+        div_ele3 = document.createElement("div");
+        div_ele3.setAttribute("class", "source-cards");
+        div_ele3.setAttribute("id", "sourceCards");
+       
+        
+        for (var i=1;i<4;i++) {
+          div_ele4 = document.createElement("div");
+          div_ele4.setAttribute("class", "source-card");
+          div_ele4.setAttribute("id", "source-card"+i.toString());
+          div_ele4.setAttribute("data-tooltip", "Click to read more about "+sd1["Title"][i-1]);
+          if (sd1["cite_state"][i-1]=="official") {
+          div_ele4.setAttribute("style", "background-color:#a855f7; border:1px solid white;");
+          }
+          else {
+          div_ele4.setAttribute("style", "background-color:black; border:1px solid white;");
+          }
+          a_ele1 = document.createElement("a");
+          a_ele1.setAttribute("href", sd1["Links"][i-1]);
+          a_ele1.setAttribute("style", "text-decoration:none; color:white;");
+          a_ele1.setAttribute("id", "link"+i.toString());
+          
+          h3_ele1 = document.createElement("h3");
+          h3_ele1.setAttribute("id", "title"+i.toString());
+	  if (sd1["cite_state"][i-1]=="official") {
+          h3_ele1.setAttribute("style", "color:black;");
+          }
+          else {
+          h3_ele1.setAttribute("style", "color:white;");
+          }
+
+          h3_ele1.innerHTML = sd1["Title"][i-1];
+          a_ele1.appendChild(h3_ele1);
+          
+          span_ele1 = document.createElement("span");
+          span_ele1.setAttribute("id", "site1");
+          span_ele1.setAttribute("class", "source-url");
+          if (sd1["cite_state"][i-1]=="official") {
+          span_ele1.setAttribute("style", "display:flex; flex-direction:row; align-items:center; color:black;");
+          }
+          else {
+          span_ele1.setAttribute("style", "display:flex; flex-direction:row; align-items:center; color:white;")
+          }
+
+          span_ele1.innerHTML = '<img src='+sd1["Favicon"][i-1]+' alt="Avatar"  width="30" height="30" style="padding:5px; border:1px solid white; border-radius:50%;">&nbsp;'+sd1["Sites"][i-1];
+          a_ele1.appendChild(span_ele1);
+          
+          div_ele4.appendChild(a_ele1);
+          div_ele3.appendChild(div_ele4);
+          
+        }
+        
+        
+        section_ele.appendChild(div_ele3);
+        
+        button_ele4 = document.createElement("button");
+        button_ele4.setAttribute("class", "show-all");
+        button_ele4.setAttribute("id", "showAll");
+        button_ele4.innerHTML="Show all";
+        button_ele4.addEventListener("click", show1);
+        section_ele.appendChild(button_ele4);
+        
+        main_ele.appendChild(section_ele);
+        
+        section_ele2 = document.createElement("section");
+        section_ele2.setAttribute("class", "answer");
+        section_ele2.setAttribute("id", "answer");
+        section_ele2.innerHTML = info1["para"];
+        
+        
+        main_ele.appendChild(section_ele2);
+        
+        main_box.appendChild(main_ele);
+        
+        relatedQuestions = sd1["related_questions"]
+
+        // Function to create related questions
+        
+        container = document.getElementById('related-questions');
+        container.innerHTML = ""
+        for (var i=0;i<relatedQuestions.length;i++) {
+            const button = document.createElement('button');
+            button.className = 'related-question';
+            button.addEventListener("click", query_result);
+            
+            const span = document.createElement('span');
+            span.setAttribute("id","question");
+            span.textContent = relatedQuestions[i];
+            
+            const icon = document.createElement('svg');
+            icon.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+            icon.setAttribute('width', '18');
+            icon.setAttribute('height', '18');
+            icon.setAttribute('viewBox', '0 0 24 24');
+            icon.setAttribute('fill', 'none');
+            icon.setAttribute('stroke', 'currentColor');
+            icon.setAttribute('stroke-width', '2');
+            icon.setAttribute('stroke-linecap', 'round');
+            icon.setAttribute('stroke-linejoin', 'round');
+            
+            const path1 = document.createElement('path');
+            path1.setAttribute('d', 'M5 12h14');
+            const path2 = document.createElement('path');
+            path2.setAttribute('d', 'M12 5v14');
+            
+            icon.appendChild(path1);
+            icon.appendChild(path2);
+            icon.style.color = 'rgba(255, 255, 255, 0.4)';
+            
+            button.appendChild(span);
+            button.appendChild(icon);
+            container.appendChild(button);
+            
+            
+        }
+        
+        let div2 = document.createElement('div');
+        div2.innerHTML = "<br><br><br><br>"
+        container.appendChild(div2);
+            
+        input.value = "";
+            swal.close();
+            
+      })
+
+}
+
+// Execute a function when the user presses a key on the keyboard
+input.addEventListener("keypress", function(event) {
+  // If the user presses the "Enter" key on the keyboard
+  if (event.key === "Enter") {
+    // Cancel the default action, if needed
+    console.log("dfd");
+    event.preventDefault();
+    // Trigger the button element with a click
+    swal({
+     text:"LibraFinFact is Acquiring Data and Performing Analysis for You",
+    title: 'Please Wait...',
+    allowEscapeKey: false,
+    allowOutsideClick: false,
+    onOpen: () => {
+      swal.showLoading();
+    }
+  }).catch(
+    () => {}
+  );
+    
+    var form = new FormData();
+        form.append("query", input.value);
+        form.append("messages", mes);
+        $.ajax({
+            type: 'POST',
+            url: '/follow_up_query',
+            data: JSON.stringify({"query":input.value,"messages":mes,"query_no":qn}),
+            dataType: "json",
+            cache: false,
+            processData: false,
+            contentType: "application/json; charset=utf-8"
+
+        }).done(function(data) {
+            console.log(data);
+            
+            info1 = data;
+        
+            var sd1 = data;
+            
+            
+            mes = info1["messages"]
+            qn = info1["query_no"]
+            
+            expanded[info1["query_no"]] = false;
+            console.log(expanded);
+            console.log(sd);
+            additionalCards1=[];
+            
+            for (var i=3;i<sd1["Title"].length;i++) {
+            if (sd1["cite_state"][i]=="official") {
+            back_color = "background-color:#a855f7; border: 1px solid white;";
+            text_color = "color:black;"
+            }
+            else {
+            back_color = "background-color:black; border: 1px solid white;";
+            text_color = "color:white;"
+            }
+
+            additionalCards1.push({
+                    title: sd1["Title"][i],
+                    url: sd1["Sites"][i],
+                    tooltip: "Click to read more about "+sd1["Title"][i],
+                    link: sd1["Links"][i],
+                    favi:sd1["Favicon"][i],
+                    color: back_color,
+		    textcolor: text_color
+            })
+            }
+            console.log(additionalCards1);
+            
+            main_box = document.getElementById("main-box")
+        
+        main_ele = document.createElement("main");
+        
+        // Header Block
+        
+        header_ele = document.createElement("header");
+        
+        div_ele1 = document.createElement("div");
+        div_ele1.setAttribute("class", "header-left");
+        
+        span_ele1 = document.createElement("span");
+        span_ele1.setAttribute("class", "time");
+        span_ele1.innerHTML = "Now"
+        div_ele1.appendChild(span_ele1);
+        
+        h1_ele1 = document.createElement("h1");
+        h1_ele1.setAttribute("id", "query");
+        h1_ele1.innerHTML = info1["query"];
+        div_ele1.appendChild(h1_ele1);
+        
+        header_ele.appendChild(div_ele1);
+        
+        div_ele2 = document.createElement("div");
+        div_ele2.setAttribute("class", "header-right");
+        
+        button_ele1 = document.createElement("button");
+        button_ele1.setAttribute("class", "bookmark");
+        button_ele1.innerHTML="📋";
+        div_ele2.appendChild(button_ele1);
+        
+        button_ele2 = document.createElement("button");
+        button_ele2.setAttribute("class", "link");
+        button_ele2.innerHTML="💾";
+        div_ele2.appendChild(button_ele2);
+        
+        button_ele3 = document.createElement("button");
+        button_ele3.setAttribute("class", "share");
+        button_ele3.innerHTML="Share";
+        div_ele2.appendChild(button_ele3);
+        
+        header_ele.appendChild(div_ele2);
+        
+        main_ele.appendChild(header_ele);
+        
+        // Section Block
+        
+                
+                
+        section_ele = document.createElement("section");
+        section_ele.setAttribute("class", "sources");
+        
+        input_ele2 = document.createElement("input");
+        input_ele2.setAttribute("type", "hidden")
+        input_ele2.setAttribute("id", "unique-no")
+        input_ele2.setAttribute("value", info1["query_no"])
+        section_ele.appendChild(input_ele2);
+        
+        h2_ele1 = document.createElement("h2");
+        h2_ele1.innerHTML = "Sources";
+        section_ele.appendChild(h2_ele1);
+        
+        div_ele3 = document.createElement("div");
+        div_ele3.setAttribute("class", "source-cards");
+        div_ele3.setAttribute("id", "sourceCards");
+       
+        
+        for (var i=1;i<4;i++) {
+          div_ele4 = document.createElement("div");
+          div_ele4.setAttribute("class", "source-card");
+          div_ele4.setAttribute("id", "source-card"+i.toString());
+          div_ele4.setAttribute("data-tooltip", "Click to read more about "+sd1["Title"][i-1]);
+          if (sd1["cite_state"][i-1]=="official") {
+          div_ele4.setAttribute("style", "background-color:#a855f7; border:1px solid white;");
+          }
+          else {
+          div_ele4.setAttribute("style", "background-color:black; border:1px solid white;");
+          }
+          
+          a_ele1 = document.createElement("a");
+          a_ele1.setAttribute("href", sd1["Links"][i-1]);
+          a_ele1.setAttribute("style", "text-decoration:none; color:white;");
+          a_ele1.setAttribute("id", "link"+i.toString());
+          
+          h3_ele1 = document.createElement("h3");
+          h3_ele1.setAttribute("id", "title"+i.toString());
+          h3_ele1.innerHTML = sd1["Title"][i-1];
+	  if (sd1["cite_state"][i-1]=="official") {
+          h3_ele1.setAttribute("style", "color:black;");
+          }
+          else {
+          h3_ele1.setAttribute("style", "color:white;");
+          }
+											       
+
+          a_ele1.appendChild(h3_ele1);
+          
+          span_ele1 = document.createElement("span");
+          span_ele1.setAttribute("id", "site1");
+          span_ele1.setAttribute("class", "source-url");
+          if (sd1["cite_state"][i-1]=="official") {
+          span_ele1.setAttribute("style", "display:flex; flex-direction:row; align-items:center; color:black;");
+          }
+          else {
+          span_ele1.setAttribute("style", "display:flex; flex-direction:row; align-items:center; color:white;")
+          }
+
+          span_ele1.innerHTML = '<img src='+sd1["Favicon"][i-1]+' alt="Avatar"  width="30" height="30" style="padding:5px; border:1px solid white; border-radius:50%;">&nbsp;'+sd1["Sites"][i-1];
+          a_ele1.appendChild(span_ele1);
+          
+          div_ele4.appendChild(a_ele1);
+          div_ele3.appendChild(div_ele4);
+          
+        }
+        
+        
+        section_ele.appendChild(div_ele3);
+        
+        button_ele4 = document.createElement("button");
+        button_ele4.setAttribute("class", "show-all");
+        button_ele4.setAttribute("id", "showAll");
+        button_ele4.innerHTML="Show all";
+        button_ele4.addEventListener("click", show1);
+        section_ele.appendChild(button_ele4);
+        
+        main_ele.appendChild(section_ele);
+        
+        section_ele2 = document.createElement("section");
+        section_ele2.setAttribute("class", "answer");
+        section_ele2.setAttribute("id", "answer");
+        section_ele2.innerHTML = info1["para"];
+        
+        
+        main_ele.appendChild(section_ele2);
+        
+        main_box.appendChild(main_ele);
+        
+        relatedQuestions = sd1["related_questions"]
+
+        // Function to create related questions
+        
+        container = document.getElementById('related-questions');
+        container.innerHTML = ""
+        for (var i=0;i<relatedQuestions.length;i++) {
+            const button = document.createElement('button');
+            button.addEventListener("click", query_result);
+            
+            const span = document.createElement('span');
+            span.setAttribute("id","question");
+            span.textContent = relatedQuestions[i];
+            
+            const icon = document.createElement('svg');
+            icon.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+            icon.setAttribute('width', '18');
+            icon.setAttribute('height', '18');
+            icon.setAttribute('viewBox', '0 0 24 24');
+            icon.setAttribute('fill', 'none');
+            icon.setAttribute('stroke', 'currentColor');
+            icon.setAttribute('stroke-width', '2');
+            icon.setAttribute('stroke-linecap', 'round');
+            icon.setAttribute('stroke-linejoin', 'round');
+            
+            const path1 = document.createElement('path');
+            path1.setAttribute('d', 'M5 12h14');
+            const path2 = document.createElement('path');
+            path2.setAttribute('d', 'M12 5v14');
+            
+            icon.appendChild(path1);
+            icon.appendChild(path2);
+            icon.style.color = 'rgba(255, 255, 255, 0.4)';
+            
+            button.appendChild(span);
+            button.appendChild(icon);
+            container.appendChild(button);
+            
+            
+        }
+        
+        let div2 = document.createElement('div');
+        div2.innerHTML = "<br><br><br><br>"
+        container.appendChild(div2);
+            
+        input.value = "";
+            swal.close();
+            
+      })
+      
+  }
+});
+     
+const micBtn = document.querySelector('.mic-btn');
+
+// Handle microphone
+   // Audio Recording
+  let mediaRecorder;
+  let audioChunks = [];
+  let isRecording = false;
+
+  // Request microphone access
+  async function setupMicrophone() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+
+      mediaRecorder.ondataavailable = (event) => {
+        audioChunks.push(event.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        console.log('Recording stopped, audio URL:', audioUrl);
+        
+        var form = new FormData();
+
+            form.append("audio_data", audioBlob);
+             $.ajax({
+                  type: 'POST',
+                  url: '/audio_save',
+                  data: form,
+                  cache: false,
+                  processData: false,
+                  contentType: false
+      
+              }).done(function(data) {
+              console.log(data);
+              input.value = data["transcript"]
+        
+      });
+        // Reset chunks for next recording
+        audioChunks = [];
+      };
+
+      return true;
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      return false;
+    }
+  }
+
+  // Handle microphone button
+  micBtn.addEventListener('click', async () => {
+    if (!mediaRecorder) {
+      const initialized = await setupMicrophone();
+      if (!initialized) {
+        alert('Could not access microphone');
+        return;
+      }
+    }
+
+    isRecording = !isRecording;
+    micBtn.style.color = isRecording ? '#ef4444' : '#9ca3af';
+
+    if (isRecording) {
+      audioChunks = [];
+      mediaRecorder.start();
+      console.log('Recording started');
+    } else {
+      mediaRecorder.stop();
+      console.log('Recording stopped');
+    }
+  });   
+  
+  var clientId
+var peerConnection
+var previousAnimationFrameTimestamp = 0;
+var counter = 0;
+
+// Logger
+const log = msg => {
+    document.getElementById('logging').innerHTML += msg + '<br>'
+}
+
+
+
+// Setup WebRTC
+function setupWebRTC(iceServerUrl, iceServerUsername, iceServerCredential) {
+    counter = 0;
+    // Create WebRTC peer connection
+    peerConnection = new RTCPeerConnection({
+        iceServers: [{
+            urls: [ iceServerUrl ],
+            username: iceServerUsername,
+            credential: iceServerCredential
+        }],
+        iceTransportPolicy: 'relay'
+    })
+
+    // Fetch WebRTC video stream and mount it to an HTML video element
+    peerConnection.ontrack = function (event) {
+        // Clean up existing video element if there is any
+        remoteVideoDiv = document.getElementById('remoteVideo')
+        for (var i = 0; i < remoteVideoDiv.childNodes.length; i++) {
+            if (remoteVideoDiv.childNodes[i].localName === event.track.kind) {
+                remoteVideoDiv.removeChild(remoteVideoDiv.childNodes[i])
+            }
+        }
+
+        const mediaPlayer = document.createElement(event.track.kind)
+        mediaPlayer.id = event.track.kind
+        mediaPlayer.srcObject = event.streams[0]
+        mediaPlayer.autoplay = true
+        document.getElementById('remoteVideo').appendChild(mediaPlayer)
+        document.getElementById('videoLabel').hidden = true
+        document.getElementById('overlayArea').hidden = false
+
+        if (event.track.kind === 'video') {
+            mediaPlayer.playsInline = true
+            remoteVideoDiv = document.getElementById('remoteVideo')
+            canvas = document.getElementById('canvas')
+            if (document.getElementById('transparentBackground').checked) {
+                remoteVideoDiv.style.width = '0.1px'
+                canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
+                canvas.hidden = false
+            } else {
+                canvas.hidden = true
+            }
+
+            mediaPlayer.addEventListener('play', () => {
+                if (document.getElementById('transparentBackground').checked) {
+                    window.requestAnimationFrame(makeBackgroundTransparent)
+                } else {
+                    remoteVideoDiv.style.width = mediaPlayer.videoWidth / 2 + 'px'
+                }
+            })
+        }
+        else
+        {
+            // Mute the audio player to make sure it can auto play, will unmute it when speaking
+            // Refer to https://developer.mozilla.org/en-US/docs/Web/Media/Autoplay_guide
+            mediaPlayer.muted = true
+        }
+    }
+
+    // Listen to data channel, to get the event from the server
+    peerConnection.addEventListener("datachannel", event => {
+        const dataChannel = event.channel
+        dataChannel.onmessage = e => {
+            console.log("[" + (new Date()).toISOString() + "] WebRTC event received: " + e.data)
+            if (e.data.includes("EVENT_TYPE_SWITCH_TO_IDLE")) {
+                document.getElementById('speak').disabled = false
+                document.getElementById('stopSpeaking').disabled = true
+                console.log(counter);
+                if (counter == 0) {
+                  speak();
+                  counter = counter+1
+                  }
+                
+            }
+            else if (e.data.includes("EVENT_TYPE_TURN_END")){
+            stopSession();
+            }
+        }
+    })
+
+    // This is a workaround to make sure the data channel listening is working by creating a data channel from the client side
+    c = peerConnection.createDataChannel("eventChannel")
+
+    // Make necessary update to the web page when the connection state changes
+    peerConnection.oniceconnectionstatechange = e => {
+        log("WebRTC status: " + peerConnection.iceConnectionState)
+
+        if (peerConnection.iceConnectionState === 'connected') {
+            document.getElementById('stopSession').disabled = false
+            document.getElementById('speak').disabled = false
+            document.getElementById('configuration').hidden = true
+        }
+
+        if (peerConnection.iceConnectionState === 'disconnected' || peerConnection.iceConnectionState === 'failed') {
+            document.getElementById('speak').disabled = true
+            document.getElementById('stopSpeaking').disabled = true
+            document.getElementById('stopSession').disabled = true
+            document.getElementById('startSession').disabled = false
+            document.getElementById('configuration').hidden = false
+        }
+    }
+
+    // Offer to receive 1 audio, and 1 video track
+    peerConnection.addTransceiver('video', { direction: 'sendrecv' })
+    peerConnection.addTransceiver('audio', { direction: 'sendrecv' })
+
+    // Connect to avatar service when ICE candidates gathering is done
+    iceGatheringDone = false
+
+    peerConnection.onicecandidate = e => {
+        if (!e.candidate && !iceGatheringDone) {
+            iceGatheringDone = true
+            connectToAvatarService(peerConnection)
+        }
+    }
+
+    peerConnection.createOffer().then(sdp => {
+        peerConnection.setLocalDescription(sdp).then(() => { setTimeout(() => {
+            if (!iceGatheringDone) {
+                iceGatheringDone = true
+                connectToAvatarService(peerConnection)
+            }
+        }, 2000) })
+    })
+    
+}
+
+// Connect to TTS Avatar Service
+function connectToAvatarService(peerConnection) {
+    let localSdp = btoa(JSON.stringify(peerConnection.localDescription))
+    let headers = {
+        'ClientId': clientId,
+        'AvatarCharacter': document.getElementById('talkingAvatarCharacter').value,
+        'AvatarStyle': document.getElementById('talkingAvatarStyle').value,
+        'BackgroundColor': document.getElementById('backgroundColor').value,
+        'BackgroundImageUrl': document.getElementById('backgroundImageUrl').value,
+        'IsCustomAvatar': document.getElementById('customizedAvatar').checked,
+        'TransparentBackground': document.getElementById('transparentBackground').checked,
+        'VideoCrop': document.getElementById('videoCrop').checked
+    }
+
+    if (document.getElementById('customVoiceEndpointId').value !== '') {
+        headers['CustomVoiceEndpointId'] = document.getElementById('customVoiceEndpointId').value
+    }
+
+    fetch('/api/connectAvatar', {
+        method: 'POST',
+        headers: headers,
+        body: localSdp
+    })
+    .then(response => {
+        if (response.ok) {
+            response.text().then(text => {
+                const remoteSdp = text
+                peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(atob(remoteSdp))))
+            })
+        } else {
+            document.getElementById('startSession').disabled = false;
+            StartSession();
+            document.getElementById('configuration').hidden = false;
+            throw new Error(`Failed connecting to the Avatar service: ${response.status} ${response.statusText}`)
+        }
+    })
+}
+
+// Make video background transparent by matting
+function makeBackgroundTransparent(timestamp) {
+    // Throttle the frame rate to 30 FPS to reduce CPU usage
+    if (timestamp - previousAnimationFrameTimestamp > 30) {
+        video = document.getElementById('video')
+        tmpCanvas = document.getElementById('tmpCanvas')
+        tmpCanvasContext = tmpCanvas.getContext('2d', { willReadFrequently: true })
+        tmpCanvasContext.drawImage(video, 0, 0, video.videoWidth, video.videoHeight)
+        if (video.videoWidth > 0) {
+            let frame = tmpCanvasContext.getImageData(0, 0, video.videoWidth, video.videoHeight)
+            for (let i = 0; i < frame.data.length / 4; i++) {
+                let r = frame.data[i * 4 + 0]
+                let g = frame.data[i * 4 + 1]
+                let b = frame.data[i * 4 + 2]
+                if (g - 150 > r + b) {
+                    // Set alpha to 0 for pixels that are close to green
+                    frame.data[i * 4 + 3] = 0
+                } else if (g + g > r + b) {
+                    // Reduce green part of the green pixels to avoid green edge issue
+                    adjustment = (g - (r + b) / 2) / 3
+                    r += adjustment
+                    g -= adjustment * 2
+                    b += adjustment
+                    frame.data[i * 4 + 0] = r
+                    frame.data[i * 4 + 1] = g
+                    frame.data[i * 4 + 2] = b
+                    // Reduce alpha part for green pixels to make the edge smoother
+                    a = Math.max(0, 255 - adjustment * 4)
+                    frame.data[i * 4 + 3] = a
+                }
+            }
+
+            canvas = document.getElementById('canvas')
+            canvasContext = canvas.getContext('2d')
+            canvasContext.putImageData(frame, 0, 0);
+        }
+
+        previousAnimationFrameTimestamp = timestamp
+    }
+
+    window.requestAnimationFrame(makeBackgroundTransparent)
+}
+
+// Do HTML encoding on given text
+function htmlEncode(text) {
+    const entityMap = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+        '/': '&#x2F;'
+    };
+
+    return String(text).replace(/[&<>"'\/]/g, (match) => entityMap[match])
+}
+
+window.onload = () => {
+    clientId = document.getElementById('clientId').value
+    
+}
+
+function startSession(){
+    //document.getElementById('startSession').disabled = true
+    counter = 0;
+    fetch('/api/getIceToken', {
+        method: 'GET',
+    })
+    .then(response => {
+        if (response.ok) {
+            response.json().then(data => {
+                const iceServerUrl = data.Urls[0]
+                const iceServerUsername = data.Username
+                const iceServerCredential = data.Password
+                setupWebRTC(iceServerUrl, iceServerUsername, iceServerCredential)
+            })
+        } else {
+            throw new Error(`Failed fetching ICE token: ${response.status} ${response.statusText}`)
+        }
+    })
+    
+    
+}
+
+function speak(){
+    document.getElementById('speak').disabled = true;
+    document.getElementById('stopSpeaking').disabled = false
+    document.getElementById('audio').muted = false
+    document.getElementById("main_summary").innerHTML = sd["summary"];
+    let spokenText = document.getElementById('spokenText').value
+    let ttsVoice = document.getElementById('ttsVoice').value
+    let personalVoiceSpeakerProfileID = document.getElementById('personalVoiceSpeakerProfileID').value
+    let spokenSsml = `<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xmlns:mstts='http://www.w3.org/2001/mstts' xml:lang='en-US'><voice name='${ttsVoice}'><mstts:ttsembedding speakerProfileId='${personalVoiceSpeakerProfileID}'><mstts:leadingsilence-exact value='0'/>${htmlEncode(spokenText)}</mstts:ttsembedding></voice></speak>`
+    console.log("[" + (new Date()).toISOString() + "] Speak request sent.")
+    
+    fetch('/api/speak', {
+        method: 'POST',
+        headers: {
+            'ClientId': clientId,
+            'Content-Type': 'application/ssml+xml'
+        },
+        body: spokenSsml
+    })
+    .then(response => {
+        if (response.ok) {
+            response.text().then(text => {
+                console.log(`[${new Date().toISOString()}] Speech synthesized to speaker for text [ ${spokenText} ]. Result ID: ${text}`)
+                
+                
+            })
+        } else {
+            throw new Error(`[${new Date().toISOString()}] Unable to speak text. ${response.status} ${response.statusText}`)
+        }
+    })
+}
+
+function stopSpeaking(){
+    document.getElementById('stopSpeaking').disabled = true
+
+    fetch('/api/stopSpeaking', {
+        method: 'POST',
+        headers: {
+            'ClientId': clientId
+        },
+        body: ''
+    })
+    .then(response => {
+        if (response.ok) {
+            console.log(`[${new Date().toISOString()}] Speaking stopped.`)
+        } else {
+            throw new Error(`[${new Date().toISOString()}] Unable to stop speaking. ${response.status} ${response.statusText}`)
+        }
+    })
+}
+
+function stopSession(){
+    counter = 0;
+    document.getElementById('speak').disabled = true
+    document.getElementById('stopSpeaking').disabled = true
+    document.getElementById('stopSession').disabled = true
+
+    fetch('/api/disconnectAvatar', {
+        method: 'POST',
+        headers: {
+            'ClientId': clientId
+        },
+        body: ''
+    })
+}
+
+function updataTransparentBackground(){
+    if (document.getElementById('transparentBackground').checked) {
+        document.body.background = './static/image/background.png'
+        document.getElementById('backgroundColor').value = '#00FF00FF'
+        document.getElementById('backgroundColor').disabled = true
+        document.getElementById('backgroundImageUrl').value = ''
+        document.getElementById('backgroundImageUrl').disabled = true
+    } else {
+        document.body.background = ''
+        document.getElementById('backgroundColor').value = '#FFFFFFFF'
+        document.getElementById('backgroundColor').disabled = false
+        document.getElementById('backgroundImageUrl').disabled = false
+    }
+}
+
+window.onbeforeunload = () => {
+    navigator.sendBeacon('/api/releaseClient', JSON.stringify({ clientId: clientId }))
+    console.log("hello")
+    
+}
+
+console.log("session");
+
+
+        
+    </script>
+</body>
+</html>
