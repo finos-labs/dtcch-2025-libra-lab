@@ -20,6 +20,8 @@ LibraFinFact is an AI-powered platform designed to address the growing challenge
 4. Mr. Sandeep Kumar 
 5. Ms. Amrita Mishra
 
+## The codes of LibraFinFact are inside main-final folder.
+
 ## Using DCO to sign your commits
 
 **All commits** must be signed with a DCO signature to avoid being flagged by the DCO Bot. This means that your commit log message must contain a line that looks like the following one, with your actual name and email address:
