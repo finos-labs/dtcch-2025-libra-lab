@@ -5,6 +5,7 @@
 
 ## Project Name - LibraFinFact
 
+![Screenshot 2025-01-31 190840](https://github.com/user-attachments/assets/5ebfe67d-5684-45e5-9c3f-1791e530bb86)
 
 ### Project Details
 LibraFinFact is an AI-powered platform designed to address the growing challenges in managing and verifying corporate action data. By leveraging advanced machine learning algorithms and large language models, LibraFinFact simplifies data verification, enhances accessibility, and delivers actionable insights to retail investors, analysts and corporate professionals.
